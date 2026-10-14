@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Gut test notities</title>
+  <!--
+    Telefoon-pagina voor de Gut Test Extension. Dit bestand hoort NIET in de
+    extensie zelf thuis maar wordt los gehost (GitHub Pages, Netlify, eigen
+    webserver — elke statische host is goed). Vul daarna de URL in bij de
+    extensie-instellingen ("Telefoon-pagina"); de QR-code opent dan deze pagina
+    met het sessie-kanaal achter het #.
+
+    Communicatie loopt via ntfy.sh (gratis, geen account):
+      <kanaal>    telefoon → extensie: notities
+      <kanaal>-s  extensie → telefoon: welke website nu in beeld is
+  -->
+  <style>
+    :root { --bg: #000; --fg: #fff; --muted: rgba(255,255,255,.62); --faint: rgba(255,255,255,.14); --accent: #3987e5; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    body { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    h1 { font-size: 28px; line-height: 1.1; margin: 6px 0 0; letter-spacing: -.02em; }
+    .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .status i { width: 8px; height: 8px; border-radius: 50%; background: #e34948; display: block; }
+    .status.ok i { background: #1baf7a; }
+
+    .card { border: 1px solid var(--faint); border-radius: 16px; padding: 16px; }
+    .target-label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .target { font-size: 22px; font-weight: 700; margin-top: 6px; overflow-wrap: anywhere; }
+    .target small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-top: 4px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .chips button { font: inherit; font-size: 14px; color: var(--fg); background: transparent; border: 1px solid var(--faint); border-radius: 999px; padding: 8px 12px; min-height: 40px; }
+    .chips button.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
+
+    textarea { width: 100%; min-height: 140px; font: inherit; font-size: 17px; line-height: 1.45; color: var(--fg); background: #111; border: 1px solid var(--faint); border-radius: 14px; padding: 14px; resize: vertical; }
+    textarea:focus { outline: none; border-color: rgba(255,255,255,.5); }
+    #sendBtn { font: inherit; font-size: 18px; font-weight: 700; color: #000; background: #fff; border: none; border-radius: 999px; padding: 16px; width: 100%; margin-top: 10px; }
+    #sendBtn:disabled { opacity: .45; }
+    .feedback { font-size: 14px; color: var(--muted); min-height: 20px; margin-top: 8px; text-align: center; }
+
+    .sent h2 { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+    .sent ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .sent li { border-left: 3px solid var(--accent); padding-left: 10px; font-size: 15px; line-height: 1.4; }
+    .sent li span { display: block; font-size: 12px; color: var(--muted); }
+
+    .notice { text-align: center; padding: 60px 16px; color: var(--muted); font-size: 17px; line-height: 1.5; }
+    .notice strong { display: block; color: var(--fg); font-size: 24px; margin-bottom: 8px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="eyebrow" id="testName">Gut test</div>
+      <h1 id="title">Jouw notities</h1>
+    </div>
+    <div class="status" id="status"><i></i><span>verbinden…</span></div>
+  </header>
+
+  <div id="main">
+    <div class="card">
+      <div class="target-label" id="targetLabel">Notitie voor de website in beeld</div>
+      <div class="target" id="target">Wachten op de test…</div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <textarea id="note" placeholder="Wat valt je op? Wat vind je mooi, wat juist niet?"></textarea>
+      <button id="sendBtn" type="button" disabled>Verstuur notitie</button>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <section class="sent" id="sent" hidden style="margin-top:18px;">
+      <h2 id="sentTitle">Verstuurd</h2>
+      <ul id="sentList"></ul>
+    </section>
+  </div>
+
+  <div class="notice" id="noTopic" hidden><strong>Geen test gevonden</strong><span>Scan de QR-code op het scherm van de gut test opnieuw.</span></div>
+  <div class="notice" id="done" hidden><strong>Bedankt!</strong><span>De gut test is afgerond. Je notities zijn opgeslagen.</span></div>
+
+  <script>
+    const RELAY = 'https://ntfy.sh';
+    const topic = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
+
+    const $ = (id) => document.getElementById(id);
+    let state = null;          // last state from the extension
+    let followScreen = true;   // note goes to whatever site is on screen
+    let pickedSiteId = null;   // ...unless the client picked one
+    let connected = false;
+    // Language comes from the extension (picked on the intro slide); until the
+    // first state arrives, follow the phone's own language.
+    let lang = (navigator.language || '').toLowerCase().startsWith('nl') ? 'nl' : 'en';
+    const T = (nl, en) => (lang === 'en' ? en : nl);
+
+    function applyTexts() {
+      document.documentElement.lang = lang;
+      document.title = T('Gut test notities', 'Gut test notes');
+      $('title').textContent = T('Jouw notities', 'Your notes');
+      $('note').placeholder = T('Wat valt je op? Wat vind je mooi, wat juist niet?', 'What stands out? What do you like, and what not?');
+      $('sendBtn').textContent = T('Verstuur notitie', 'Send note');
+      $('sentTitle').textContent = T('Verstuurd', 'Sent');
+      $('noTopic').querySelector('strong').textContent = T('Geen test gevonden', 'No test found');
+      $('noTopic').querySelector('span').textContent = T('Scan de QR-code op het scherm van de gut test opnieuw.', 'Scan the QR code on the gut test screen again.');
+      $('done').querySelector('strong').textContent = T('Bedankt!', 'Thank you!');
+      $('done').querySelector('span').textContent = T('De gut test is afgerond. Je notities zijn opgeslagen.', 'The gut test is finished. Your notes have been saved.');
+      $('status').querySelector('span').textContent = connected ? T('verbonden', 'connected') : T('verbinden…', 'connecting…');
+    }
+    applyTexts();
+
+    if (!/^[-_A-Za-z0-9]{8,64}$/.test(topic)) {
+      $('main').hidden = true;
+      $('noTopic').hidden = false;
+    } else {
+      connect();
+    }
+
+    function connect() {
+      const source = new EventSource(`${RELAY}/${topic}-s/sse?since=1h`);
+      source.onopen = () => setStatus(true);
+      source.onerror = () => setStatus(false);
+      source.onmessage = (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch (e) { return; }
+        if (data.event !== 'message') return;
+        let payload;
+        try { payload = JSON.parse(data.message); } catch (e) { return; }
+        if (payload && payload.t === 'state') applyState(payload);
+      };
+    }
+
+    function setStatus(ok) {
+      connected = ok;
+      $('status').classList.toggle('ok', ok);
+      $('status').querySelector('span').textContent = ok ? T('verbonden', 'connected') : T('geen verbinding', 'no connection');
+    }
+
+    function applyState(next) {
+      state = next;
+      if ((state.lang === 'en' || state.lang === 'nl') && state.lang !== lang) {
+        lang = state.lang;
+        applyTexts();
+      }
+      if (state.mode === 'done') {
+        $('main').hidden = true;
+        $('done').hidden = false;
+        return;
+      }
+      $('main').hidden = false;
+      $('done').hidden = true;
+      $('testName').textContent = `Gut test · ${state.test || ''}`;
+      renderTarget();
+    }
+
+    function targetSite() {
+      if (!state || !Array.isArray(state.sites)) return null;
+      const id = followScreen ? state.current : pickedSiteId;
+      return state.sites.find((s) => s.id === id) || null;
+    }
+
+    function renderTarget() {
+      const site = targetSite();
+      $('targetLabel').textContent = followScreen ? T('Notitie voor de website in beeld', 'Note for the website on screen') : T('Notitie voor', 'Note for');
+      $('target').textContent = '';
+      if (site) {
+        $('target').append(`${site.n}. ${site.label}`);
+      } else {
+        $('target').append(T('Wachten op de test…', 'Waiting for the test…'));
+      }
+      const small = document.createElement('small');
+      small.textContent = followScreen ? T('Volgt automatisch het scherm', 'Follows the screen automatically') : T('Zelf gekozen', 'Chosen by you');
+      $('target').appendChild(small);
+
+      const chips = $('chips');
+      chips.replaceChildren();
+      const follow = document.createElement('button');
+      follow.type = 'button';
+      follow.textContent = T('Volg scherm', 'Follow screen');
+      follow.classList.toggle('active', followScreen);
+      follow.onclick = () => { followScreen = true; pickedSiteId = null; renderTarget(); };
+      chips.appendChild(follow);
+      (state && state.sites || []).forEach((s) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = String(s.n);
+        b.title = s.label;
+        b.classList.toggle('active', !followScreen && pickedSiteId === s.id);
+        b.onclick = () => { followScreen = false; pickedSiteId = s.id; renderTarget(); };
+        chips.appendChild(b);
+      });
+      updateSendButton();
+    }
+
+    function updateSendButton() {
+      $('sendBtn').disabled = !$('note').value.trim();
+    }
+    $('note').addEventListener('input', updateSendButton);
+
+    $('sendBtn').addEventListener('click', async () => {
+      const text = $('note').value.trim();
+      if (!text) return;
+      const site = targetSite();
+      $('sendBtn').disabled = true;
+      $('feedback').textContent = T('Versturen…', 'Sending…');
+      try {
+        const res = await fetch(`${RELAY}/${topic}`, {
+          method: 'POST',
+          body: JSON.stringify({ t: 'note', siteId: site ? site.id : null, text })
+        });
+        if (!res.ok) throw new Error(res.status);
+        $('note').value = '';
+        $('feedback').textContent = T('✓ Verstuurd', '✓ Sent');
+        addSent(text, site);
+        setTimeout(() => { $('feedback').textContent = ''; }, 2000);
+      } catch (e) {
+        $('feedback').textContent = T('Versturen mislukt — probeer het nog eens.', 'Sending failed — please try again.');
+      }
+      updateSendButton();
+    });
+
+    function addSent(text, site) {
+      const li = document.createElement('li');
+      const meta = document.createElement('span');
+      const time = new Date().toLocaleTimeString(lang === 'en' ? 'en-GB' : 'nl-NL', { hour: '2-digit', minute: '2-digit' });
+      meta.textContent = site ? `${time} · ${site.n}. ${site.label}` : time;
+      li.append(meta, document.createTextNode(text));
+      $('sentList').prepend(li);
+      $('sent').hidden = false;
+    }
+  </script>
+</body>
+</html>

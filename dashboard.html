@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Gut Test Extension — Dashboard</title>
+  <link rel="stylesheet" href="common.css">
+  <style>
+    .gte-topbar select { max-width: 260px; }
+    .gte-topbar .gte-actions { display: flex; gap: 8px; align-items: center; }
+
+    #testMeta { display: flex; align-items: center; gap: 14px; margin: 18px 0; flex-wrap: wrap; }
+    #testMeta h2 { font-size: 20px; margin: 0; }
+    .gte-progress-track { flex: 1; min-width: 120px; height: 8px; background: var(--gte-surface-raised); border-radius: 4px; overflow: hidden; }
+    .gte-progress-fill { height: 100%; background: var(--gte-accent); }
+
+    .gte-row-group { margin-bottom: 8px; }
+    .gte-rank-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      margin-bottom: 0;
+    }
+    /* Panel closed (default): row keeps its normal rounded corners.
+       Panel open: flatten the row's bottom corners so it visually joins
+       the notes panel below it. Driven by a JS-toggled class, not the
+       `hidden` attribute — that clashed with .gte-notes-panel's own
+       `display: flex` before and silently did nothing. */
+    .gte-row-group.notes-open .gte-rank-row {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    .gte-rank-row.unrated { opacity: 0.55; }
+    .gte-rank-number {
+      width: 24px;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 15px;
+      text-align: center;
+      color: var(--gte-text-muted);
+    }
+    #rankedList .gte-row-group:first-child .gte-rank-number { color: #fab219; }
+    .gte-favicon { width: 20px; height: 20px; flex-shrink: 0; border-radius: 4px; background: var(--gte-surface-raised); }
+    .gte-site-info { display: block; width: 150px; flex-shrink: 0; min-width: 0; text-decoration: none; color: inherit; cursor: pointer; }
+    .gte-site-info .gte-site-label { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--gte-text); }
+    .gte-site-info:hover .gte-site-label { text-decoration: underline; color: var(--gte-accent); }
+    .gte-site-info .gte-link-icon { color: var(--gte-text-muted); font-weight: 400; }
+    .gte-site-info:hover .gte-link-icon { color: var(--gte-accent); }
+    .gte-site-info .gte-site-url { font-size: 11px; color: var(--gte-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+    .gte-bar-track { flex: 1 1 60px; min-width: 40px; height: 20px; background: var(--gte-surface-raised); border-radius: 5px; overflow: hidden; }
+    .gte-bar-fill { height: 100%; border-radius: 5px; transition: width 0.3s ease; }
+    .gte-rating-value { width: 26px; flex-shrink: 0; font-weight: 700; text-align: right; font-size: 15px; }
+    .gte-recheck-btn { flex-shrink: 0; margin-left: auto; padding-left: 10px; padding-right: 10px; }
+    .gte-notes-toggle { flex-shrink: 0; white-space: nowrap; }
+
+    /* Dropdown panel with one textarea per category — hidden by default via
+       `display: none`, only shown while its row-group has `.notes-open`.
+       (Not the `hidden` attribute — see the note above.) */
+    .gte-notes-panel {
+      display: none;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--gte-surface-raised);
+      border: 1px solid var(--gte-border);
+      border-top: none;
+      border-bottom-left-radius: var(--gte-radius);
+      border-bottom-right-radius: var(--gte-radius);
+      padding: 12px 14px;
+    }
+    .gte-row-group.notes-open .gte-notes-panel { display: flex; }
+    .gte-note-field { flex: 1; min-width: 160px; }
+    .gte-note-field .gte-label { margin-bottom: 3px; }
+    .gte-note-textarea { width: 100%; font-size: 12.5px; resize: vertical; font-family: var(--gte-font); }
+
+    /* Screenshots captured via the overlay's 📷 button — shown first in the
+       notes dropdown, above the text fields. */
+    .gte-screenshots-section { flex-basis: 100%; }
+    .gte-screenshots-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .gte-screenshot-empty { font-size: 12px; color: var(--gte-text-muted); }
+    .gte-screenshot-thumb {
+      position: relative;
+      width: 76px;
+      height: 56px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--gte-border);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .gte-screenshot-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gte-screenshot-remove {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      font-size: 10px;
+      line-height: 16px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .gte-screenshot-remove:hover { background: var(--gte-critical); }
+
+    .gte-phone-inline {
+      margin: 0 14px 0 48px;
+      padding: 8px 0 10px 12px;
+      border-left: 3px solid var(--gte-accent);
+    }
+    .gte-phone-inline-title { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gte-text-muted); margin-bottom: 4px; }
+    .gte-phone-inline-line { font-size: 13.5px; line-height: 1.45; color: var(--gte-text); }
+    .gte-phone-inline-line span { color: var(--gte-text-muted); font-size: 12px; margin-right: 8px; font-variant-numeric: tabular-nums; }
+    .gte-row-group.notes-open .gte-phone-inline { display: none; }
+
+    #emptyState { text-align: center; padding: 60px 0; color: var(--gte-text-muted); }
+    #sectionUnrated h3 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gte-text-muted); margin: 20px 0 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="gte-topbar">
+    <h1 style="font-size:16px;">Gut Test Extension — Dashboard</h1>
+    <div class="gte-actions">
+      <select id="testSelect" class="gte-select"></select>
+      <button id="exportBtn" class="gte-btn gte-btn-ghost gte-btn-sm">Exporteer CSV</button>
+      <button id="manageBtn" class="gte-btn gte-btn-ghost gte-btn-sm">Tests beheren</button>
+    </div>
+  </div>
+
+  <div class="gte-shell">
+    <div id="emptyState" hidden>Nog geen tests met resultaten. Maak er eerst een aan via "Tests beheren".</div>
+
+    <div id="content" hidden>
+      <div id="testMeta">
+        <h2 id="testTitle"></h2>
+        <span id="testDate" class="gte-muted" style="font-size:12.5px;"></span>
+        <div class="gte-progress-track"><div class="gte-progress-fill" id="progressFill"></div></div>
+        <span id="progressLabel" class="gte-secondary" style="font-size:12.5px;"></span>
+      </div>
+
+      <div id="rankedList"></div>
+
+      <div id="sectionUnrated" hidden>
+        <h3 id="unratedTitle">Nog niet beoordeeld</h3>
+        <div id="unratedList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="gte_data.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

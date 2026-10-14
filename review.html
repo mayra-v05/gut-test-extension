@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gut Test — beoordelen</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #111111;
+      --surface-2: #1c1c1c;
+      --fg: #ffffff;
+      --muted: rgba(255, 255, 255, 0.62);
+      --faint: rgba(255, 255, 255, 0.14);
+      --accent: #3987e5;
+      --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --topbar-h: 76px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--topbar-h) + 16px); }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); }
+    button { font-family: inherit; }
+
+    /* ---------- Top bar with centered progress ---------- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      height: var(--topbar-h);
+      display: grid;
+      grid-template-columns: 1fr minmax(260px, 560px) 1fr;
+      align-items: center;
+      gap: 20px;
+      padding: 0 clamp(16px, 3vw, 40px);
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--faint);
+    }
+    .brand { font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .progress { text-align: center; }
+    .progress-text { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+    .progress-text span { color: var(--muted); font-weight: 600; font-size: 14px; margin-left: 6px; }
+    .segments { display: flex; gap: 5px; margin-top: 8px; }
+    .segments button {
+      flex: 1;
+      height: 8px;
+      border: none;
+      border-radius: 4px;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.16);
+      cursor: pointer;
+    }
+    .segments button.rated { background: #ffffff; }
+    .segments button.current { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+    .icon-btn {
+      height: 40px;
+      min-width: 40px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--faint);
+      background: transparent;
+      color: var(--fg);
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .icon-btn[aria-pressed="false"] { opacity: 0.45; }
+    .icon-btn[hidden] { display: none; }
+    .finish-btn {
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 999px;
+      border: none;
+      background: #ffffff;
+      color: #000;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .qr-pop {
+      position: absolute;
+      top: calc(var(--topbar-h) - 6px);
+      right: clamp(16px, 3vw, 40px);
+      width: 260px;
+      padding: 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--faint);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      display: none;
+    }
+    .qr-pop.open { display: block; }
+    .qr-pop .qr { background: #fff; border-radius: 10px; overflow: hidden; aspect-ratio: 1; }
+    .qr-pop .qr svg { display: block; width: 100%; height: 100%; }
+    .qr-pop p { font-size: 13px; line-height: 1.45; color: var(--muted); margin: 12px 0 0 0; }
+
+    /* ---------- Intro ---------- */
+    .hero {
+      padding: clamp(40px, 8vh, 96px) clamp(16px, 5vw, 80px) clamp(24px, 4vh, 48px);
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .hero h1 { font-size: clamp(36px, 5vw, 72px); line-height: 1; letter-spacing: -0.03em; margin: 0 0 18px 0; font-weight: 800; }
+    .hero p { font-size: clamp(16px, 1.4vw, 20px); color: var(--muted); max-width: 46em; line-height: 1.5; margin: 0; }
+    .hero kbd { font: inherit; font-size: 0.85em; border: 1px solid var(--faint); border-radius: 6px; padding: 0 6px; color: var(--fg); }
+
+    /* ---------- One row per site ---------- */
+    .sites { max-width: 1600px; margin: 0 auto; padding: 0 clamp(16px, 5vw, 80px) 40px; }
+    .site {
+      display: grid;
+      grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr);
+      gap: clamp(20px, 3vw, 48px);
+      padding: clamp(28px, 4vh, 48px) 0;
+      border-top: 1px solid var(--faint);
+    }
+
+    .browser {
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--faint);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .site.current .browser { border-color: rgba(255, 255, 255, 0.45); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
+    .browser-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 40px;
+      padding: 0 12px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--faint);
+    }
+    .dots { display: flex; gap: 6px; }
+    .dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: block; }
+    .url {
+      flex: 1;
+      min-width: 0;
+      font-size: 12.5px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 5px 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .view-toggle { display: flex; background: rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 2px; }
+    .view-toggle button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .view-toggle button.active { background: rgba(255, 255, 255, 0.16); color: var(--fg); }
+    .open-link { font-size: 12.5px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+    .open-link:hover { color: var(--fg); }
+
+    .viewport { position: relative; overflow: hidden; background: #fff; }
+    .viewport iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1440px;
+      height: 900px;
+      border: 0;
+      transform-origin: 0 0;
+      background: #fff;
+    }
+    .viewport .shot {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      display: none;
+      background: #fff;
+    }
+    .viewport .shot img { display: block; width: 100%; }
+    .viewport.show-shot .shot { display: block; }
+    .viewport.show-shot iframe { visibility: hidden; }
+    .viewport .no-shot { padding: 24px; color: #333; font-size: 14px; }
+    .frame-help { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+    /* ---------- Rating panel ---------- */
+    .panel { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+    .panel-head { display: flex; align-items: baseline; gap: 14px; }
+    .panel-num { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .panel-title { min-width: 0; }
+    .panel-title h2 { font-size: 26px; margin: 0; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+    .panel-title div { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .label button { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; text-transform: none; letter-spacing: 0; padding: 0; }
+    .label button:hover { color: var(--fg); }
+    .rating { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+    .rating button {
+      height: 46px;
+      border: 1px solid var(--faint);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--fg);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.1s ease, transform 0.08s ease;
+    }
+    .rating button:hover { background: rgba(255, 255, 255, 0.1); }
+    .rating button:active { transform: scale(0.95); }
+    .rating button.selected { border-color: transparent; color: #fff; }
+
+    textarea {
+      width: 100%;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--fg);
+      background: var(--surface);
+      border: 1px solid var(--faint);
+      border-radius: 10px;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 72px;
+    }
+    textarea:focus { outline: none; border-color: rgba(255, 255, 255, 0.45); }
+    details summary { cursor: pointer; font-size: 14px; color: var(--muted); list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before { content: '+ '; }
+    details[open] summary::before { content: '− '; }
+    details .more { display: grid; gap: 12px; margin-top: 12px; }
+    .saved { font-size: 13px; color: var(--muted); min-height: 18px; }
+    .saved.error { color: #ff8a8a; font-weight: 600; }
+
+    .phone-notes { border-left: 3px solid var(--accent); padding-left: 12px; }
+    .phone-notes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .phone-notes li { font-size: 14px; line-height: 1.45; }
+    .phone-notes li time { color: var(--muted); font-size: 12px; margin-right: 6px; font-variant-numeric: tabular-nums; }
+    .phone-notes[hidden] { display: none; }
+
+    /* ---------- Finish ---------- */
+    .finish {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: clamp(48px, 10vh, 120px) clamp(16px, 5vw, 80px);
+      border-top: 1px solid var(--faint);
+      text-align: center;
+    }
+    .finish h2 { font-size: clamp(32px, 4vw, 56px); margin: 0 0 12px 0; letter-spacing: -0.03em; }
+    .finish p { color: var(--muted); font-size: 18px; margin: 0 0 28px 0; }
+    .finish .finish-btn { height: 60px; font-size: 20px; padding: 0 40px; }
+
+    #emptyState { padding: 120px 24px; text-align: center; color: var(--muted); font-size: 18px; }
+
+    @media (max-width: 1000px) {
+      .site { grid-template-columns: 1fr; }
+      .topbar { grid-template-columns: 1fr auto; height: auto; padding-top: 10px; padding-bottom: 10px; }
+      .brand { display: none; }
+      .progress { text-align: left; }
+      :root { --topbar-h: 88px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" id="brand">Gut test</div>
+    <div class="progress">
+      <div class="progress-text" id="progressText">0 van 0 beoordeeld</div>
+      <div class="segments" id="segments"></div>
+    </div>
+    <div class="actions">
+      <button class="icon-btn" id="phoneBtn" type="button" title="Notities op je telefoon (QR-code)" hidden>📱</button>
+      <button class="icon-btn" id="musicBtn" type="button" title="Achtergrondmuziek aan/uit" aria-pressed="true">🎵</button>
+      <button class="finish-btn" id="finishTop" type="button">Afronden →</button>
+    </div>
+    <div class="qr-pop" id="qrPop">
+      <div class="qr" id="qr"></div>
+      <p id="qrText">Scan met je telefoon om notities te typen. Ze komen bij de website die nu in het midden van je scherm staat.</p>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 id="heroTitle">Alle websites gezien.<br>Nu beoordelen.</h1>
+    <p id="heroText">Hieronder staat elke website nog een keer, klein maar echt: je kunt erin scrollen. Geef per site een cijfer van 1 tot 10. Notities zijn optioneel. Sneltoetsen: <kbd>1</kbd>–<kbd>9</kbd> en <kbd>0</kbd> (= 10) geven de website in beeld een cijfer.</p>
+  </section>
+
+  <div class="sites" id="sites"></div>
+  <div id="emptyState" hidden>Deze test kon niet worden geladen.</div>
+
+  <section class="finish" id="finishSection">
+    <h2 id="finishTitle">Klaar?</h2>
+    <p id="finishText">Rond af om de ranking te bekijken.</p>
+    <button class="finish-btn" id="finishBottom" type="button">Afronden en ranking bekijken →</button>
+  </section>
+
+  <script src="vendor/qrcode.js"></script>
+  <script src="gte_data.js"></script>
+  <script src="review.js"></script>
+</body>
+</html>

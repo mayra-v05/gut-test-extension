@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Gut Test Extension</title>
+  <link rel="stylesheet" href="common.css">
+  <style>
+    body { width: 300px; padding: 14px; }
+    h1 { font-size: 15px; margin-bottom: 2px; }
+    .gte-version { font-size: 10px; color: var(--gte-text-muted); margin-bottom: 12px; }
+
+    .gte-section { margin-bottom: 12px; }
+
+    #toggleButton.running { background: var(--gte-critical); color: #fff; }
+    #toggleButton.stopped { background: #1a7a2e; color: #fff; }
+    #reviewButton.exit-review { background: var(--gte-critical); color: #fff; }
+
+    #status {
+      margin-top: 10px;
+      text-align: center;
+      padding: 6px 8px;
+      border-radius: var(--gte-radius-sm);
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+    #status.running { background: #1a7a2e; color: #fff; }
+    #status.stopped { background: var(--gte-surface-raised); color: var(--gte-text-secondary); }
+    #status.review { background: var(--gte-warning); color: #1a1a19; }
+    #status.error { background: var(--gte-critical); color: #fff; }
+
+    details.gte-settings summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12.5px;
+      color: var(--gte-text-secondary);
+      padding: 4px 0;
+    }
+    .gte-setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 12.5px;
+    }
+    .gte-setting-row.nested { padding-left: 10px; opacity: 0.9; }
+    .gte-setting-row input[type="number"] { width: 52px; }
+    .gte-setting-row input[type="range"] { flex: 1; margin: 0 6px; }
+    .gte-setting-row label { display: flex; align-items: center; gap: 6px; flex: 1; }
+    input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--gte-accent); }
+
+    .gte-footer-links { display: flex; gap: 8px; margin-top: 10px; }
+    .gte-footer-links .gte-btn { flex: 1; }
+
+    #noTestHint { font-size: 12px; color: var(--gte-text-muted); margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Gut Test Extension</h1>
+  <div class="gte-version" id="versionDisplay">v?.?.?</div>
+
+  <div id="completedBanner" class="gte-card gte-section" style="border-color: var(--gte-accent);" hidden>
+    <div style="font-size:12.5px; margin-bottom:8px;">🎉 <span id="completedText">Gut test klaar!</span></div>
+    <button id="completedDashboardBtn" class="gte-btn gte-btn-primary gte-btn-block">Bekijk dashboard</button>
+  </div>
+
+  <div class="gte-section">
+    <label class="gte-label" for="testSelect">Actieve test</label>
+    <select id="testSelect" class="gte-select"></select>
+    <div id="noTestHint" hidden>Nog geen test opgeslagen. Klik op "Tests beheren" om er een aan te maken.</div>
+  </div>
+
+  <div class="gte-section">
+    <button id="toggleButton" class="gte-btn gte-btn-block stopped">Start Gut Test</button>
+    <button id="reviewButton" class="gte-btn gte-btn-block gte-btn-ghost" style="margin-top:6px;">Alleen beoordelen (review-pagina)</button>
+  </div>
+
+  <details class="gte-settings gte-section">
+    <summary>Instellingen</summary>
+
+    <div class="gte-setting-row">
+      <label for="interval">Wisselinterval</label>
+      <input type="number" id="interval" class="gte-input" min="5" value="20">
+      <span class="gte-muted" style="font-size:11px;">sec</span>
+    </div>
+    <div class="gte-setting-row">
+      <label><input type="checkbox" id="refresh"> Ververs tab voor wisselen</label>
+    </div>
+    <div class="gte-setting-row">
+      <label><input type="checkbox" id="autoscroll" checked> Automatisch scrollen</label>
+    </div>
+    <div class="gte-setting-row nested">
+      <label><input type="checkbox" id="enableTopDelay" checked> Wacht bovenaan</label>
+      <input type="number" id="topDelaySeconds" class="gte-input" min="1" value="3" style="width:44px;">
+      <span class="gte-muted" style="font-size:11px;">sec</span>
+    </div>
+    <div class="gte-setting-row nested">
+      <label for="scrollSpeed">Scrolsnelheid</label>
+      <input type="range" id="scrollSpeed" min="1" max="10" value="5">
+      <span id="scrollSpeedValue" style="font-weight:700;">5</span>
+    </div>
+    <div class="gte-setting-row">
+      <label><input type="checkbox" id="reviewRefresh"> Ververs tab in Review Mode</label>
+    </div>
+    <div class="gte-setting-row">
+      <label><input type="checkbox" id="musicEnabled" checked> 🎵 Achtergrondmuziek tijdens test</label>
+    </div>
+    <div class="gte-setting-row nested">
+      <label for="musicVolume">Volume</label>
+      <input type="range" id="musicVolume" min="0" max="100" value="50">
+      <span id="musicVolumeValue" style="font-weight:700; width:30px; text-align:right;">50</span>
+    </div>
+    <div class="gte-setting-row" style="flex-direction:column; align-items:stretch;">
+      <label for="phonePageUrl" style="margin-bottom:2px;">📱 Telefoon-pagina (optioneel)</label>
+      <input type="url" id="phonePageUrl" class="gte-input" placeholder="https://…/phone/" style="width:100%;">
+      <div class="gte-muted" style="font-size:11px; margin-top:3px;">Leeg = de QR opent de ntfy-app op de telefoon. Zie README om phone/index.html te hosten voor een eigen pagina.</div>
+    </div>
+  </details>
+
+  <div class="gte-footer-links">
+    <button id="openManage" class="gte-btn gte-btn-ghost">Tests beheren</button>
+    <button id="openDashboard" class="gte-btn gte-btn-ghost">Dashboard</button>
+  </div>
+
+  <div id="status" class="stopped">Status: Gestopt</div>
+
+  <script src="gte_data.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

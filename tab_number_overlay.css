@@ -1,0 +1,264 @@
+/* Gut Test Extension — on-page overlay (injected into every test site).
+   `all: initial` + explicit values everywhere, so the host site's own CSS
+   can't bend the overlay out of shape. */
+
+/* ---------- Top-center progress bar ---------- */
+
+#gte-progress-top {
+  all: initial;
+  position: fixed !important;
+  top: 14px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  width: min(620px, calc(100vw - 32px));
+  box-sizing: border-box;
+  display: block;
+  padding: 12px 18px 14px 18px;
+  background: rgba(8, 8, 8, 0.92);
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+#gte-progress-top * { box-sizing: border-box; font-family: inherit; }
+
+#gte-progress-top .gte-top-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  white-space: nowrap;
+}
+#gte-progress-top .gte-phase {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0d0d0d;
+  background: #ffffff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  align-self: center;
+}
+#gte-progress-top .gte-count {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+#gte-progress-top .gte-top-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: #b7b6ad;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#gte-progress-top .gte-countdown {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+#gte-progress-top.gte-paused .gte-countdown { color: #f3b34c; }
+
+#gte-progress-top .gte-segments {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+#gte-progress-top.single .gte-segments { display: none; }
+#gte-progress-top .gte-seg {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+#gte-progress-top .gte-seg.done { background: #ffffff; }
+#gte-progress-top .gte-seg.current { background: rgba(255, 255, 255, 0.28); }
+#gte-progress-top .gte-seg-fill {
+  height: 100%;
+  width: 0%;
+  background: #3987e5;
+  transition: width 0.25s linear;
+}
+#gte-progress-top .gte-seg.current .gte-seg-fill { display: block; }
+#gte-progress-top:not(.show-timer) .gte-seg.current .gte-seg-fill { width: 100% !important; background: #ffffff; }
+#gte-progress-top.gte-paused .gte-seg.current .gte-seg-fill { background: #f3b34c; }
+
+/* ---------- Bottom-center control bar ---------- */
+
+#gte-rating-overlay {
+  all: initial;
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  width: min(900px, calc(100vw - 32px));
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  background: rgba(8, 8, 8, 0.94);
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 12px 14px;
+  -webkit-user-select: none;
+  user-select: none;
+  display: block;
+  box-sizing: border-box;
+}
+#gte-rating-overlay * { box-sizing: border-box; font-family: inherit; }
+
+#gte-rating-overlay .gte-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#gte-rating-overlay .gte-nav {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  line-height: 46px;
+  text-align: center;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  padding: 0;
+}
+#gte-rating-overlay .gte-nav:hover { background: rgba(255, 255, 255, 0.22); }
+
+#gte-rating-overlay .gte-info {
+  flex: 1 1 140px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+#gte-rating-overlay .gte-label {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#gte-rating-overlay .gte-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: #898781;
+}
+#gte-rating-overlay .gte-dot.status-scrollable { background-color: #1baf7a; }
+#gte-rating-overlay .gte-dot.status-unscrollable { background-color: #e34948; }
+#gte-rating-overlay .gte-dot.status-unknown { background-color: #898781; }
+
+#gte-rating-overlay .gte-toolbar,
+#gte-rating-overlay .gte-timer-controls {
+  display: flex;
+  gap: 8px;
+}
+#gte-rating-overlay .gte-timer-controls { display: none; }
+#gte-rating-overlay.show-timer .gte-timer-controls { display: flex; }
+
+#gte-rating-overlay .gte-toolbar-btn,
+#gte-rating-overlay .gte-timer-btn {
+  height: 48px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#gte-rating-overlay .gte-toolbar-btn[hidden] { display: none; }
+#gte-rating-overlay .gte-toolbar-btn:hover,
+#gte-rating-overlay .gte-timer-btn:hover { background: rgba(255, 255, 255, 0.22); }
+#gte-rating-overlay .gte-toolbar-btn:disabled { opacity: 0.7; cursor: default; }
+#gte-rating-overlay .gte-music-btn.off { opacity: 0.45; text-decoration: line-through; }
+#gte-rating-overlay.show-qr .gte-phone-btn { background: #3987e5; }
+#gte-rating-overlay .gte-pause-btn { min-width: 112px; }
+#gte-rating-overlay.gte-paused .gte-pause-btn { background: #3987e5; }
+
+/* Rating only outside the gut test itself (single-site recheck). */
+#gte-rating-overlay .gte-rating-block { display: none; margin-top: 12px; }
+#gte-rating-overlay.can-rate .gte-rating-block { display: block; }
+#gte-rating-overlay .gte-rating-caption { font-size: 12px; color: #9a9990; margin-bottom: 6px; }
+#gte-rating-overlay .gte-rating-row { display: flex; gap: 6px; }
+#gte-rating-overlay .gte-rating-btn {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.10);
+  color: #e6e5e0;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+#gte-rating-overlay .gte-rating-btn:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+#gte-rating-overlay .gte-rating-btn.selected { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6) inset; }
+
+#gte-rating-overlay .gte-qr-panel {
+  display: none;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+#gte-rating-overlay.show-qr .gte-qr-panel { display: flex; }
+#gte-rating-overlay .gte-qr-box {
+  flex-shrink: 0;
+  width: 150px;
+  height: 150px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  color: #000;
+  font-size: 11px;
+}
+#gte-rating-overlay .gte-qr-box svg { display: block; width: 100%; height: 100%; }
+#gte-rating-overlay .gte-qr-text { font-size: 15px; line-height: 1.45; color: #d7d6cd; }
+
+#gte-rating-overlay .gte-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #75746c;
+  text-align: center;
+}
+
+#gte-rating-overlay .gte-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translate(-50%, 6px);
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: #1a7a2e;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+#gte-rating-overlay .gte-toast.show { opacity: 1; transform: translate(-50%, 0); }

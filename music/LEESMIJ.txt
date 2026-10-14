@@ -1,0 +1,2 @@
+Zet hier optioneel een eigen rechtenvrij nummer neer als achtergrond.mp3.
+Zonder dat bestand speelt de extensie een zelf gegenereerde beat.

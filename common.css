@@ -1,0 +1,111 @@
+/* Shared theme for popup.html, manage.html and dashboard.html.
+   Dark UI to match the on-page rating overlay. System font stack only —
+   no external font requests, so everything still looks right offline. */
+
+:root {
+  --gte-bg: #0d0d0d;
+  --gte-surface: #1a1a19;
+  --gte-surface-raised: #232322;
+  --gte-border: rgba(255, 255, 255, 0.10);
+  --gte-text: #ffffff;
+  --gte-text-secondary: #c3c2b7;
+  --gte-text-muted: #898781;
+  --gte-accent: #3987e5;
+  --gte-accent-strong: #256abf;
+  --gte-good: #0ca30c;
+  --gte-warning: #fab219;
+  --gte-critical: #d03b3b;
+  --gte-radius: 12px;
+  --gte-radius-sm: 8px;
+  --gte-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--gte-font);
+  background-color: var(--gte-bg);
+  color: var(--gte-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+h1, h2, h3, h4 { font-weight: 700; margin: 0 0 8px 0; }
+
+a { color: var(--gte-accent); }
+
+.gte-card {
+  background: var(--gte-surface);
+  border: 1px solid var(--gte-border);
+  border-radius: var(--gte-radius);
+  padding: 16px;
+}
+
+.gte-btn {
+  font-family: var(--gte-font);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.05s ease;
+  color: var(--gte-text);
+  background: var(--gte-surface-raised);
+}
+.gte-btn:hover { opacity: 0.9; }
+.gte-btn:active { transform: scale(0.98); }
+.gte-btn:disabled { background: #333; color: #888; cursor: not-allowed; opacity: 1; }
+
+.gte-btn-primary { background: var(--gte-accent); color: #fff; }
+.gte-btn-success { background: #1a7a2e; color: #fff; }
+.gte-btn-danger { background: var(--gte-critical); color: #fff; }
+.gte-btn-ghost { background: transparent; border: 1px solid var(--gte-border); }
+.gte-btn-sm { padding: 5px 11px; font-size: 12.5px; }
+.gte-btn-block { width: 100%; display: block; text-align: center; }
+
+.gte-input, .gte-select, .gte-textarea {
+  font-family: var(--gte-font);
+  font-size: 14px;
+  background: #2b2b2a;
+  color: var(--gte-text);
+  border: 1px solid var(--gte-border);
+  border-radius: var(--gte-radius-sm);
+  padding: 7px 9px;
+  width: 100%;
+}
+.gte-textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.5; }
+
+.gte-label { display: block; font-weight: 600; margin-bottom: 4px; color: var(--gte-text-secondary); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+.gte-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  background: var(--gte-surface-raised);
+  color: var(--gte-text-secondary);
+}
+
+.gte-muted { color: var(--gte-text-muted); }
+.gte-secondary { color: var(--gte-text-secondary); }
+
+.gte-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--gte-border);
+  background: var(--gte-surface);
+}
+
+.gte-shell { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }

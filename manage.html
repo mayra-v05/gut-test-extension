@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Gut Test Extension - Tests beheren</title>
+  <link rel="stylesheet" href="common.css">
+  <style>
+    .gte-test-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .gte-test-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .gte-test-card .gte-test-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gte-test-card h3 {
+      font-size: 15px;
+      margin-bottom: 3px;
+    }
+
+    .gte-test-card .gte-meta {
+      font-size: 12px;
+      color: var(--gte-text-muted);
+    }
+
+    .gte-test-card .gte-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .gte-active-badge {
+      background: var(--gte-accent);
+      color: #fff;
+    }
+
+    textarea#sitesInput {
+      min-height: 160px;
+    }
+
+    .gte-help {
+      font-size: 12px;
+      color: var(--gte-text-muted);
+      margin-top: 6px;
+    }
+
+    .gte-form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .gte-form-actions .gte-btn {
+      flex: 0 0 auto;
+    }
+
+    #formTitle {
+      margin-bottom: 12px;
+    }
+
+    #emptyState {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--gte-text-muted);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="gte-topbar">
+    <h1 style="font-size:16px;">Gut Test Extension</h1>
+    <div>
+      <button class="gte-btn gte-btn-ghost gte-btn-sm" id="goPopupHint">Sluit dit tabblad en open de extensie-popup om
+        een test te starten</button>
+    </div>
+  </div>
+
+  <div class="gte-shell">
+    <div class="gte-card" style="margin-bottom:24px;">
+      <h2 id="formTitle">Nieuwe test aanmaken</h2>
+      <div style="margin-bottom:10px;">
+        <label class="gte-label" for="testName">Naam (bijv. klantnaam)</label>
+        <input type="text" id="testName" class="gte-input" placeholder="Bijv. Klant X — homepage gut test">
+      </div>
+      <div>
+        <label class="gte-label" for="sitesInput">Websites (1 per regel, max ~10-15 aanbevolen)</label>
+        <textarea id="sitesInput" class="gte-textarea gte-input"
+          placeholder="https://voorbeeld1.nl&#10;Concurrent A | https://voorbeeld2.nl&#10;https://voorbeeld3.nl"></textarea>
+        <div class="gte-help">Optioneel een eigen label ervoor met een verticale streep: <code>Label | url</code>.
+          Zonder label wordt de domeinnaam gebruikt.</div>
+      </div>
+      <div class="gte-form-actions">
+        <button id="saveTestBtn" class="gte-btn gte-btn-primary">Test opslaan</button>
+        <button id="cancelEditBtn" class="gte-btn gte-btn-ghost" hidden>Annuleren</button>
+      </div>
+    </div>
+
+    <h2>Opgeslagen tests</h2>
+    <div id="emptyState" hidden>Nog geen tests. Maak hierboven je eerste gut test aan.</div>
+    <div class="gte-test-list" id="testList"></div>
+  </div>
+
+  <script src="gte_data.js"></script>
+  <script src="manage.js"></script>
+</body>
+
+</html>
